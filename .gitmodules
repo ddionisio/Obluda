@@ -1,0 +1,3 @@
+[submodule "Assets/M8"]
+	path = Assets/M8
+	url = https://github.com/ddionisio/MateUnity.git
