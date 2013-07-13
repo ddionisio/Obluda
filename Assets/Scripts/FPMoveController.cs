@@ -6,9 +6,13 @@ using System.Collections.Generic;
 public class FPMoveController : MonoBehaviour {
     public Transform target;
 
-    public float force = 5.0f;
-    public float jumpSpeed = 10.0f;
-    public float maxSpeed = 50.0f;
+    public float moveForce = 15.0f;
+    public float moveAirForce = 5.0f;
+    public float moveMaxSpeed = 5.0f;
+
+    public float jumpForce = 25.0f;
+    public float jumpDelay = 0.2f;
+        
     public float turnSensitivity = 2.0f;
 
     public float airDrag = 0.0f; //if there is no ground collision, this is the drag
@@ -23,6 +27,7 @@ public class FPMoveController : MonoBehaviour {
     public int moveInputX = InputManager.ActionInvalid;
     public int moveInputY = InputManager.ActionInvalid;
     public int turnInput = InputManager.ActionInvalid;
+    public int jumpInput = InputManager.ActionInvalid;
 
     public bool startInputEnabled = false;
 
@@ -37,9 +42,12 @@ public class FPMoveController : MonoBehaviour {
 
     private bool mSlide = false;
     private float mTopBottomColCos;
+    private bool mJump = false;
+    private float mJumpLastTime = 0.0f;
 
     public CollisionFlags collisionFlags { get { return mCollFlags; } }
     public bool isGrounded { get { return (mCollFlags & CollisionFlags.Below) != 0; } }
+    public bool isJump { get { return mJump; } }
 
     public bool inputEnabled {
         get { return mInputEnabled; }
@@ -50,8 +58,10 @@ public class FPMoveController : MonoBehaviour {
                 InputManager input = Main.instance != null ? Main.instance.input : null;
                 if(input != null) {
                     if(mInputEnabled) {
+                        input.AddButtonCall(player, jumpInput, OnInputJump);
                     }
                     else {
+                        input.RemoveButtonCall(player, jumpInput, OnInputJump);
                     }
                 }
             }
@@ -130,29 +140,57 @@ public class FPMoveController : MonoBehaviour {
                 body.MoveRotation(rot);
             }
 
+            if(mJump) {
+                if(Time.fixedTime - mJumpLastTime >= jumpDelay || (mCollFlags & CollisionFlags.Above) != 0) {
+                    mJump = false;
+                }
+                else {
+                    body.AddForce(rot * Vector3.up * jumpForce);
+                }
+            }
+
             if(isGrounded) {
                 if(mCurInputMoveAxis != Vector2.zero) {
-                    body.drag = groundDrag;
+                    body.drag = mJump ? airDrag : groundDrag;
 
-                    if(body.rigidbody.velocity.sqrMagnitude < maxSpeed * maxSpeed) {
-                        body.AddForce(rot * Vector3.forward * mCurInputMoveAxis.y * force);
-                        body.AddForce(rot * Vector3.right * mCurInputMoveAxis.x * force);
+                    if(body.velocity.sqrMagnitude < moveMaxSpeed * moveMaxSpeed) {
+                        body.AddForce(rot * Vector3.forward * mCurInputMoveAxis.y * moveForce);
+                        body.AddForce(rot * Vector3.right * mCurInputMoveAxis.x * moveForce);
                     }
                 }
                 else {//we are standing, check if we are only colliding below and not 'sliding'
                     if(mCollFlags == CollisionFlags.Below && !mSlide)
-                        body.drag = standDrag;
+                        body.drag = mJump ? airDrag : standDrag;
                     else
-                        body.drag = groundDrag;
+                        body.drag = mJump ? airDrag : groundDrag;
                 }
             }
             else {
                 body.drag = airDrag;
+
+                if(mCurInputMoveAxis != Vector2.zero) {
+                    if(body.velocity.sqrMagnitude < moveMaxSpeed * moveMaxSpeed) {
+                        body.AddForce(rot * Vector3.forward * mCurInputMoveAxis.y * moveAirForce);
+                        body.AddForce(rot * Vector3.right * mCurInputMoveAxis.x * moveAirForce);
+                    }
+                }
             }
         }
         else {
             mCurInputMoveAxis = Vector2.zero;
             mCurInputTurnAxis = 0.0f;
+        }
+    }
+
+    void OnInputJump(InputManager.Info dat) {
+        if(dat.state == InputManager.State.Pressed) {
+            if(isGrounded && !mJump) {
+                mJump = true;
+                mJumpLastTime = Time.fixedTime;
+            }
+        }
+        else if(dat.state == InputManager.State.Released) {
+            mJump = false;
         }
     }
 }
