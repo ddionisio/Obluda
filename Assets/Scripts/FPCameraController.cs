@@ -5,6 +5,8 @@ public class FPCameraController : MonoBehaviour {
     public Transform eye;
     public Transform attach; //this is the body that the eye is attached to, position of camera will be set to this
 
+    public Vector3 offset;
+
     public Vector2 lookSensitivity;
 
     public bool lookYInvert = false;
@@ -99,7 +101,18 @@ public class FPCameraController : MonoBehaviour {
             
             eye.rotation = rot;
 
-            eye.position = attach.position;
+            Vector3 pos = attach.position;
+
+            if(offset.x != 0.0f)
+                pos += attach.right * offset.x;
+
+            if(offset.y != 0.0f)
+                pos += attach.up * offset.y;
+
+            if(offset.z != 0.0f)
+                pos += attach.forward * offset.z;
+
+            eye.position = pos;
         }
     }
 }

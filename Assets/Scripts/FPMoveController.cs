@@ -31,10 +31,17 @@ public class FPMoveController : MonoBehaviour {
 
     public bool startInputEnabled = false;
 
+    private struct CollideInfo {
+        public CollisionFlags flag;
+        public Vector3 normal;
+
+    }
+
     private Vector2 mCurInputMoveAxis;
     private float mCurInputTurnAxis;
 
-    private HashSet<Collider> mColls = new HashSet<Collider>();
+    //private HashSet<Collider> mColls = new HashSet<Collider>();
+    private Dictionary<Collider, CollideInfo> mColls = new Dictionary<Collider, CollideInfo>(16);
 
     private bool mInputEnabled = false;
 
@@ -70,36 +77,81 @@ public class FPMoveController : MonoBehaviour {
 
     void OnCollisionEnter(Collision col) {
         //refresh during stay
-        mColls.Clear();
+        //mCollFlags = CollisionFlags.None;
+        //mSlide = false;
+
+        //mColls.Clear();
+
+        Vector3 up = target.up;
+
+        foreach(ContactPoint contact in col.contacts) {
+            if(!mColls.ContainsKey(contact.otherCollider)) {
+                //mColls.Add(contact.otherCollider, contact);
+
+                CollisionFlags colFlag = M8.PhysicsUtil.GetCollisionFlagsSphereCos(up, target.collider.bounds.center, mTopBottomColCos, contact.point);
+                mCollFlags |= colFlag;
+
+                if(colFlag == CollisionFlags.Below) {
+                    mSlide = Vector3.Angle(up, contact.normal) > slopLimit;
+                }
+
+                mColls.Add(contact.otherCollider, new CollideInfo() { flag = colFlag, normal = contact.normal });
+            }
+        }
     }
 
-    void OnCollisionStay(Collision col) {
+    //void OnCollisionStay(Collision col) {
+        /*if(mUpdateCollisionFlags) {
+            Vector3 up = target.up;
+
+            foreach(ContactPoint contact in col.contacts) {
+                mColls.Add(contact.otherCollider);
+
+                //determine flags
+                CollisionFlags colFlag = M8.PhysicsUtil.GetCollisionFlagsSphereCos(up, target.collider.bounds.center, mTopBottomColCos, contact.point);
+                mCollFlags |= colFlag;
+
+                if(colFlag == CollisionFlags.Below) {
+                    mSlide = Vector3.Angle(up, contact.normal) > slopLimit;
+                }
+
+                //Debug.Log("contact: " + contact.otherCollider.name);
+            }
+
+            mUpdateCollisionFlags = false;
+        }*/
+
+        //Debug.Log("flags: " + mCollFlags);
+    //}
+
+    void OnCollisionExit(Collision col) {
+        /*mUpdateCollisionFlags = true;
+        mCollFlags = CollisionFlags.None;
+        mSlide = false;
+
+        foreach(ContactPoint contact in col.contacts) {
+            mColls.Remove(contact.otherCollider);
+        }*/
+                
+        foreach(ContactPoint contact in col.contacts) {
+            if(mColls.ContainsKey(contact.otherCollider))
+                mColls.Remove(contact.otherCollider);
+        }
+
         mCollFlags = CollisionFlags.None;
         mSlide = false;
 
         Vector3 up = target.up;
 
-        foreach(ContactPoint contact in col.contacts) {
-            mColls.Add(contact.otherCollider);
+        foreach(KeyValuePair<Collider, CollideInfo> pair in mColls) {
+            //ContactPoint contact = pair.Value;
 
-            //determine flags
-            CollisionFlags colFlag = M8.PhysicsUtil.GetCollisionFlagsSphereCos(up, target.collider.bounds.center, mTopBottomColCos, contact.point);
-            mCollFlags |= colFlag;
+            //CollisionFlags colFlag = M8.PhysicsUtil.GetCollisionFlagsSphereCos(up, target.collider.bounds.center, mTopBottomColCos, contact.point);
+            mCollFlags |= pair.Value.flag;
 
-            if(colFlag == CollisionFlags.Below) {
-                mSlide = Vector3.Angle(up, contact.normal) > slopLimit;
+            if(pair.Value.flag == CollisionFlags.Below) {
+                mSlide = Vector3.Angle(up, pair.Value.normal) > slopLimit;
             }
-        }
-    }
-
-    void OnCollisionExit(Collision col) {
-        foreach(ContactPoint contact in col.contacts) {
-            mColls.Remove(contact.otherCollider);
-        }
-
-        if(mColls.Count == 0) {
-            mCollFlags = CollisionFlags.None;
-            mSlide = false;
         }
     }
 
