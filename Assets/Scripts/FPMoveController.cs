@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 //TODO: right now it assumes a sphere collider
 public class FPMoveController : MonoBehaviour {
+    public Transform dirHolder; //the forward vector of this determines our forward movement
+
     public float moveForce = 25.0f;
     public float moveAirForce = 10.0f;
     public float moveMaxSpeed = 3.5f;
@@ -50,6 +52,7 @@ public class FPMoveController : MonoBehaviour {
     private float mTopBottomColCos;
     private bool mJump = false;
     private float mJumpLastTime = 0.0f;
+    private Vector3 mCurUp; //this is for checking to see if the up vector suddenly changed
     
     public CollisionFlags collisionFlags { get { return mCollFlags; } }
     public bool isGrounded { get { return (mCollFlags & CollisionFlags.Below) != 0; } }
@@ -131,21 +134,8 @@ public class FPMoveController : MonoBehaviour {
                 mColls.Remove(contact.otherCollider);
         }
 
-        mCollFlags = CollisionFlags.None;
-        mGroundSlide = false;
-
-        Vector3 up = transform.up;
-
-        foreach(KeyValuePair<Collider, CollideInfo> pair in mColls) {
-            //ContactPoint contact = pair.Value;
-
-            //CollisionFlags colFlag = M8.PhysicsUtil.GetCollisionFlagsSphereCos(up, target.collider.bounds.center, mTopBottomColCos, contact.point);
-            mCollFlags |= pair.Value.flag;
-
-            if(pair.Value.flag == CollisionFlags.Below) {
-                mGroundSlide = Vector3.Angle(up, pair.Value.normal) > slopLimit;
-            }
-        }
+        mCurUp = transform.up;
+        RefreshCollInfo();
     }
 
     void OnDestroy() {
@@ -159,6 +149,7 @@ public class FPMoveController : MonoBehaviour {
     // Use this for initialization
     void Start() {
         inputEnabled = startInputEnabled;
+        mCurUp = transform.up;
     }
 
     // Update is called once per frame
@@ -169,6 +160,8 @@ public class FPMoveController : MonoBehaviour {
 
         Rigidbody body = rigidbody;
         Quaternion rot = transform.rotation;
+
+        Quaternion dirRot = dirHolder.rotation;
 
         if(mInputEnabled) {
             InputManager input = Main.instance.input;
@@ -181,8 +174,8 @@ public class FPMoveController : MonoBehaviour {
             mCurInputTurnAxis = turnInput != InputManager.ActionInvalid ? input.GetAxis(player, turnInput) : 0.0f;
 
             if(mCurInputTurnAxis != 0.0f) {
-                rot *= Quaternion.AngleAxis(mCurInputTurnAxis * turnSensitivity, Vector3.up);
-                body.MoveRotation(rot);
+                dirRot *= Quaternion.AngleAxis(mCurInputTurnAxis * turnSensitivity, Vector3.up);
+                dirHolder.rotation = dirRot;
             }
 
             if(mJump) {
@@ -221,8 +214,8 @@ public class FPMoveController : MonoBehaviour {
                 //bool doSlide = false;
                 //Vector3 slide
 
-                Vector3 moveDelta = rot * Vector3.forward * mCurInputMoveAxis.y;
-                moveDelta += rot * Vector3.right * mCurInputMoveAxis.x;
+                Vector3 moveDelta = dirRot * Vector3.forward * mCurInputMoveAxis.y;
+                moveDelta += dirRot * Vector3.right * mCurInputMoveAxis.x;
 
                 mCurMoveDir = moveDelta.normalized;
 
@@ -247,6 +240,11 @@ public class FPMoveController : MonoBehaviour {
             mCurInputTurnAxis = 0.0f;
             mCurMoveDir = Vector3.zero;
         }
+
+        if(transform.up != mCurUp) {
+            mCurUp = transform.up;
+            RefreshCollInfo();
+        }
     }
 
     void OnInputJump(InputManager.Info dat) {
@@ -258,6 +256,24 @@ public class FPMoveController : MonoBehaviour {
         }
         else if(dat.state == InputManager.State.Released) {
             mJump = false;
+        }
+    }
+
+    void RefreshCollInfo() {
+        mCollFlags = CollisionFlags.None;
+        mGroundSlide = false;
+
+        Vector3 up = transform.up;
+
+        foreach(KeyValuePair<Collider, CollideInfo> pair in mColls) {
+            //ContactPoint contact = pair.Value;
+
+            //CollisionFlags colFlag = M8.PhysicsUtil.GetCollisionFlagsSphereCos(up, target.collider.bounds.center, mTopBottomColCos, contact.point);
+            mCollFlags |= pair.Value.flag;
+
+            if(pair.Value.flag == CollisionFlags.Below) {
+                mGroundSlide = Vector3.Angle(up, pair.Value.normal) > slopLimit;
+            }
         }
     }
 }
