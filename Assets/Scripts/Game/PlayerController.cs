@@ -2,6 +2,10 @@ using UnityEngine;
 using System.Collections;
 
 public class PlayerController : MonoBehaviour {
+    public float interactDistance;
+    public LayerMask interactLayerCast; //for solid checks
+    public LayerMask interactLayer; //layers of objects that are interactive (this should be a mask within interactLayerCast)
+    public float interactCheckDelay = 0.15f;
 
     private Player mPlayer;
     private FPCameraController mCameraCtrl;
@@ -56,6 +60,18 @@ public class PlayerController : MonoBehaviour {
     void Update() {
 
     }
+
+    #region input
+
+    void OnInputAction(InputManager.Info dat) {
+        if(dat.state == InputManager.State.Pressed) {
+            //check if interactive
+
+            //determine what sort of equipment
+        }
+    }
+
+    #endregion
 
     #region player messages
 
