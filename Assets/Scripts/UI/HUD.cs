@@ -2,20 +2,10 @@ using UnityEngine;
 using System.Collections;
 
 public class HUD : MonoBehaviour {
-    public UISprite reticle;
 
     private static HUD mInstance;
-
-    private NGUIColorPulse mReticleActivePulse;
-
+        
     public static HUD instance { get { return mInstance; } }
-
-    public bool reticleActive {
-        get { return mReticleActivePulse.enabled; }
-        set {
-            mReticleActivePulse.enabled = value;
-        }
-    }
 
     void OnDestroy() {
         if(mInstance == this)
@@ -26,8 +16,6 @@ public class HUD : MonoBehaviour {
         if(mInstance == null) {
             mInstance = this;
 
-            mReticleActivePulse = reticle.GetComponentInChildren<NGUIColorPulse>();
-            mReticleActivePulse.enabled = false;
         }
     }
 

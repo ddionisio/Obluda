@@ -12,7 +12,36 @@ public class PlayerController : MonoBehaviour {
     private FPMoveController mMoveCtrl;
     private CursorAutoLock mCursorAutoLock;
 
-    bool mInputEnabled = false;
+    private bool mReticleActive = false;
+    private bool mReticleIsRunning = false;
+    private WaitForSeconds mReticleWaitDelay;
+    private Interactor mReticleCurInteract = null;
+
+    private bool mInputEnabled = false;
+
+    public bool reticleActive {
+        get { return mReticleActive; }
+        set {
+            if(mReticleActive != value) {
+                mReticleActive = value;
+
+                if(mReticleActive) {
+                    if(!mReticleIsRunning)
+                        StartCoroutine("DoReticleCheck");
+                }
+                else {
+                    mReticleIsRunning = false;
+
+                    if(mReticleCurInteract != null) {
+                        mReticleCurInteract.isPointedAt = false;
+                        mReticleCurInteract = null;
+                    }
+
+                    Reticle.instance.state = Reticle.instance.stateStart;
+                }
+            }
+        }
+    }
 
     public bool inputEnabled {
         get { return mInputEnabled; }
@@ -27,8 +56,10 @@ public class PlayerController : MonoBehaviour {
                 InputManager input = Main.instance != null ? Main.instance.input : null;
                 if(input != null) {
                     if(mInputEnabled) {
+                        input.AddButtonCall(0, InputAction.Action, OnInputAction);
                     }
                     else {
+                        input.RemoveButtonCall(0, InputAction.Action, OnInputAction);
                     }
                 }
             }
@@ -49,6 +80,8 @@ public class PlayerController : MonoBehaviour {
         mMoveCtrl.jumpInput = InputAction.Jump;
 
         mCursorAutoLock.cursorLockCallback += OnCursorLock;
+
+        mReticleWaitDelay = new WaitForSeconds(interactCheckDelay);
     }
 
     // Use this for initialization
@@ -66,8 +99,12 @@ public class PlayerController : MonoBehaviour {
     void OnInputAction(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
             //check if interactive
-
-            //determine what sort of equipment
+            if(mReticleCurInteract != null) {
+                mReticleCurInteract.Act();
+            }
+            else {
+                //determine what sort of equipment
+            }
         }
     }
 
@@ -87,14 +124,18 @@ public class PlayerController : MonoBehaviour {
             case Player.StateNormal:
                 if(mCursorAutoLock.isLocked)
                     inputEnabled = true;
+
+                reticleActive = true;
                 break;
 
             case Player.StateDead:
                 inputEnabled = false;
+                reticleActive = false;
                 break;
 
             case Player.StateInvalid:
                 inputEnabled = false;
+                reticleActive = false;
                 break;
         }
     }
@@ -111,6 +152,39 @@ public class PlayerController : MonoBehaviour {
         }
         else {
             inputEnabled = false;
+        }
+    }
+
+    IEnumerator DoReticleCheck() {
+        mReticleIsRunning = true;
+
+        while(mReticleIsRunning) {
+            yield return mReticleWaitDelay;
+
+            //check
+            Interactor checkInteract = null;
+
+            RaycastHit hit;
+            if(Physics.Raycast(mMoveCtrl.transform.position, mCameraCtrl.eye.forward, out hit, interactDistance, interactLayerCast)) {
+                if((interactLayer & (1 << hit.collider.gameObject.layer)) != 0) {
+                    Interactor interactor = hit.collider.GetComponent<Interactor>();
+                    checkInteract = interactor;
+                }
+            }
+
+            //set reticle if there is a new one
+            if(mReticleCurInteract != checkInteract) {
+                if(mReticleCurInteract != null)
+                    mReticleCurInteract.isPointedAt = false;
+
+                mReticleCurInteract = checkInteract;
+                if(mReticleCurInteract != null) {
+                    mReticleCurInteract.isPointedAt = true;
+                }
+                else {
+                    Reticle.instance.state = Reticle.instance.stateStart;
+                }
+            }
         }
     }
 }
