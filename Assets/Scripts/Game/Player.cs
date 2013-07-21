@@ -2,8 +2,6 @@ using UnityEngine;
 using System.Collections;
 
 public class Player : EntityBase {
-    public const int StateNormal = 0;
-    public const int StateDead = 1;
 
     protected override void StateChanged() {
         
@@ -35,7 +33,7 @@ public class Player : EntityBase {
 
     public override void SpawnFinish() {
         //start ai, player control, etc
-        state = StateNormal;
+        state = (int)EntityState.Normal;
     }
 
     protected override void SpawnStart() {

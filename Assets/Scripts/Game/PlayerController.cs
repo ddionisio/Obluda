@@ -19,6 +19,9 @@ public class PlayerController : MonoBehaviour {
 
     private bool mInputEnabled = false;
 
+    public FPMoveController moveController { get { return mMoveCtrl; } }
+    public FPCameraController cameraController { get { return mCameraCtrl; } }
+
     public bool reticleActive {
         get { return mReticleActive; }
         set {
@@ -37,7 +40,8 @@ public class PlayerController : MonoBehaviour {
                         mReticleCurInteract = null;
                     }
 
-                    Reticle.instance.state = Reticle.instance.stateStart;
+                    if(Reticle.instance != null)
+                        Reticle.instance.state = Reticle.instance.stateStart;
                 }
             }
         }
@@ -100,7 +104,7 @@ public class PlayerController : MonoBehaviour {
         if(dat.state == InputManager.State.Pressed) {
             //check if interactive
             if(mReticleCurInteract != null) {
-                mReticleCurInteract.Act();
+                mReticleCurInteract.Act(gameObject);
             }
             else {
                 //determine what sort of equipment
@@ -120,20 +124,20 @@ public class PlayerController : MonoBehaviour {
     }
 
     void OnPlayerSetState(EntityBase ent, int state) {
-        switch(state) {
-            case Player.StateNormal:
+        switch((EntityState)state) {
+            case EntityState.Normal:
                 if(mCursorAutoLock.isLocked)
                     inputEnabled = true;
 
                 reticleActive = true;
                 break;
 
-            case Player.StateDead:
+            case EntityState.Dead:
                 inputEnabled = false;
                 reticleActive = false;
                 break;
 
-            case Player.StateInvalid:
+            case EntityState.Invalid:
                 inputEnabled = false;
                 reticleActive = false;
                 break;
@@ -144,8 +148,8 @@ public class PlayerController : MonoBehaviour {
 
     void OnCursorLock(bool locked) {
         if(locked) {
-            switch(mPlayer.state) {
-                case Player.StateNormal:
+            switch((EntityState)mPlayer.state) {
+                case EntityState.Normal:
                     inputEnabled = true;
                     break;
             }

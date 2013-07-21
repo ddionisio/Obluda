@@ -12,26 +12,30 @@ public class Interactor : MonoBehaviour {
 
     public PlayMakerFSM targetFSM; //if null, use the fsm of this object
         
-    public bool defaultLocked = false;
-
     public GameObject onPointGO; //set to active if we are pointed at
+
+    [SerializeField]
+    bool _defaultLocked = false;
 
     [SerializeField]
     State _stateOnPoint = State.None; //what state to use if we are being pointed at.
 
     private bool mIsPointedAt = false; //this is set by player controller to determine if we are pointing at this interactor
     private bool mLocked = false; //if true, can't perform interaction if we are being pointed at
+    private State mStateOnPoint;
 
+    public bool lockedDefault { get { return _defaultLocked; } }
     public bool locked { get { return mLocked; } set { mLocked = value; } }
 
+    public State stateOnPointDefault { get { return _stateOnPoint; } }
     public State stateOnPoint {
-        get { return _stateOnPoint; }
+        get { return mStateOnPoint; }
         set {
-            if(_stateOnPoint != value) {
-                _stateOnPoint = value;
+            if(mStateOnPoint != value) {
+                mStateOnPoint = value;
                                 
                 if(mIsPointedAt)
-                    Reticle.instance.state = (int)_stateOnPoint;
+                    Reticle.instance.state = (int)mStateOnPoint;
             }
         }
     }
@@ -46,19 +50,21 @@ public class Interactor : MonoBehaviour {
                     onPointGO.SetActive(mIsPointedAt);
 
                 if(mIsPointedAt)
-                    Reticle.instance.state = (int)_stateOnPoint;
+                    Reticle.instance.state = (int)mStateOnPoint;
             }
         }
     }
 
-    public void Act() {
+    public void Act(GameObject source) {
         if(!mLocked) {
+            Fsm.EventData.GameObjectData = source;
             targetFSM.SendEvent(EntityEvent.Interact);
         }
     }
 
     void OnEnable() {
-        locked = defaultLocked;
+        mStateOnPoint = _stateOnPoint;
+        locked = _defaultLocked;
     }
 
     void Awake() {
