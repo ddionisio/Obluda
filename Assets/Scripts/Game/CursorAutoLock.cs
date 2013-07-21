@@ -48,10 +48,17 @@ public class CursorAutoLock : MonoBehaviour {
                     cursorLockCallback(false);
             }
         }
-        else if(Screen.lockCursor && !mWasLocked) {
-            mWasLocked = true;
-            if(cursorLockCallback != null)
-                cursorLockCallback(true);
+        else if(Screen.lockCursor) {
+            if(!CanLock()) {
+                Screen.lockCursor = false;
+                return;
+            }
+
+            if(!mWasLocked) {
+                mWasLocked = true;
+                if(cursorLockCallback != null)
+                    cursorLockCallback(true);
+            }
         }
     }
 

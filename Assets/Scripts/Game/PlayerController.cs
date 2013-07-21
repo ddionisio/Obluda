@@ -103,11 +103,17 @@ public class PlayerController : MonoBehaviour {
     void OnInputAction(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
             //check if interactive
+            if(mReticleCurInteract == null) {
+                //determine what sort of equipment and fire that weapon
+            }
+        }
+        else if(dat.state == InputManager.State.Released) {
             if(mReticleCurInteract != null) {
+                //
                 mReticleCurInteract.Act(gameObject);
             }
             else {
-                //determine what sort of equipment
+                //release click based action?
             }
         }
     }
