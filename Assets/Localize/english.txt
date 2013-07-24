@@ -16,4 +16,68 @@
 		"key":"test2",
 		"text":"ZOOM! ZOOM!"
 	},
+	
+	{
+		"key":"testy0",
+		"text":"TRIPPED DOWN."
+	},
+	{
+		"key":"testy1",
+		"text":"TRIPPED DOWN AND HIT NOSE."
+	},
+	
+	{
+		"key":"testiest0",
+		"text":"FISHING FOR BIRDIES!"
+	},
+	
+	{
+		"key":"stupid0",
+		"text":"SLEEP AT NIGHT."
+	},
+	
+	{
+		"key":"stupid1",
+		"text":"POTENTIAL!"
+	},
+	
+	{
+		"key":"stupid2",
+		"text":"HERE GOES NO SOMETHING."
+	},
+	
+	{
+		"key":"stupid3",
+		"text":"NO UNDERSTAND WHAT IS WHAT."
+	},
+	
+	{
+		"key":"question0",
+		"text":"HELP MAKE GAME?"
+	},
+	
+	{
+		"key":"question1",
+		"text":"SAY YES TO ME? SAY NO TO ME?"
+	},
+	
+	{
+		"key":"answer_yes",
+		"text":"YES"
+	},
+	
+	{
+		"key":"answer_no",
+		"text":"NO"
+	},
+	
+	{
+		"key":"reply_yes",
+		"text":"CONTACT PROGRAMMER GUY! BOING!"
+	},
+	
+	{
+		"key":"reply_no",
+		"text":"AM SAD..."
+	},
 ]
