@@ -8,8 +8,7 @@ public class PlayerController : MonoBehaviour {
     public float interactCheckDelay = 0.15f;
 
     private Player mPlayer;
-    private FPCameraController mCameraCtrl;
-    private FPMoveController mMoveCtrl;
+    private FPController mMoveCtrl;
     private CursorAutoLock mCursorAutoLock;
 
     private bool mReticleActive = false;
@@ -19,8 +18,7 @@ public class PlayerController : MonoBehaviour {
 
     private bool mInputEnabled = false;
 
-    public FPMoveController moveController { get { return mMoveCtrl; } }
-    public FPCameraController cameraController { get { return mCameraCtrl; } }
+    public FPController moveController { get { return mMoveCtrl; } }
 
     public bool reticleActive {
         get { return mReticleActive; }
@@ -53,7 +51,6 @@ public class PlayerController : MonoBehaviour {
             if(mInputEnabled != value) {
                 mInputEnabled = value;
 
-                mCameraCtrl.inputEnabled = mInputEnabled;
                 mMoveCtrl.inputEnabled = mInputEnabled;
 
                 //our own inputs
@@ -71,16 +68,15 @@ public class PlayerController : MonoBehaviour {
     }
 
     void Awake() {
-        mCameraCtrl = GetComponentInChildren<FPCameraController>();
-        mMoveCtrl = GetComponentInChildren<FPMoveController>();
+        mMoveCtrl = GetComponentInChildren<FPController>();
         mCursorAutoLock = GetComponent<CursorAutoLock>();
 
         //set input keys to these controllers
-        mCameraCtrl.lookInputY = InputAction.LookY;
-
+        
         mMoveCtrl.moveInputX = InputAction.MoveX;
         mMoveCtrl.moveInputY = InputAction.MoveY;
-        mMoveCtrl.turnInput = InputAction.LookX;
+        mMoveCtrl.lookInputX = InputAction.LookX;
+        mMoveCtrl.lookInputY = InputAction.LookY;
         mMoveCtrl.jumpInput = InputAction.Jump;
 
         mCursorAutoLock.cursorLockCallback += OnCursorLock;
@@ -175,7 +171,7 @@ public class PlayerController : MonoBehaviour {
             Interactor checkInteract = null;
 
             RaycastHit hit;
-            if(Physics.Raycast(mMoveCtrl.transform.position, mCameraCtrl.eye.forward, out hit, interactDistance, interactLayerCast)) {
+            if(Physics.Raycast(mMoveCtrl.transform.position, mMoveCtrl.eye.forward, out hit, interactDistance, interactLayerCast)) {
                 if((interactLayer & (1 << hit.collider.gameObject.layer)) != 0) {
                     Interactor interactor = hit.collider.GetComponent<Interactor>();
                     checkInteract = interactor;
