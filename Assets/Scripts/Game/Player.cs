@@ -2,6 +2,23 @@ using UnityEngine;
 using System.Collections;
 
 public class Player : EntityBase {
+    private Inventory mInventory = new Inventory();
+
+    public Transform equipHolder;
+
+    public Inventory inventory { get { return mInventory; } }
+
+    public void Load() {
+        //load stats, etc.
+
+        mInventory.Load();
+    }
+
+    public void Save() {
+        //save stats, etc.
+
+        mInventory.Save();
+    }
 
     protected override void StateChanged() {
         

@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour {
 
     private bool mInputEnabled = false;
 
+    public Player player { get { return mPlayer; } }
     public FPController moveController { get { return mMoveCtrl; } }
 
     public bool reticleActive {
