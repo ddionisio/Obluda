@@ -7,7 +7,8 @@ public enum ItemType {
     Equip,
     Useable,
     Seed,
-    Misc //also quest and other junk
+    Quest, //quest related
+    Collect //these need to be manually displayed, e.g.: heart piece, essence
 }
 
 [System.Serializable]

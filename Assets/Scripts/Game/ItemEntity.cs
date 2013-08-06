@@ -21,8 +21,11 @@ public class ItemEntity : EntityBase {
     }
 
     protected override void OnDespawned() {
-        //reset stuff here
-        mItemRef = null;
+        //if persistent, remove save reference and mark as 'collected'
+        if(mItemRef != null) {
+            //reset stuff here
+            mItemRef = null;
+        }
 
         base.OnDespawned();
     }
@@ -40,8 +43,13 @@ public class ItemEntity : EntityBase {
 
     protected override void SpawnStart() {
         //initialize some things
-        if(mItemId != -1 && mItemRef == null)
-            mItemRef = ItemManager.instance.GetItem(mItemId);
+        if(startItemId != -1) { //this means it is placed on the scene
+            if(mItemRef == null)
+                mItemRef = ItemManager.instance.GetItem(startItemId);
+        }
+        else {
+            //determine if persistent, save reference
+        }
     }
 
     protected override void Awake() {
@@ -53,6 +61,8 @@ public class ItemEntity : EntityBase {
     // Use this for initialization
     protected override void Start() {
         base.Start();
+
+        //check if this is marked as 'collected' from save reference
 
         //initialize variables from other sources (for communicating with managers, etc.)
         if(startItemId != -1)

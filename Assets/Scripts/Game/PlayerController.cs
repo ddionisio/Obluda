@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour {
     private Interactor mReticleCurInteract = null;
 
     private bool mInputEnabled = false;
+    private bool mInputLocked = false;
 
     public Player player { get { return mPlayer; } }
     public FPController moveController { get { return mMoveCtrl; } }
@@ -52,7 +53,8 @@ public class PlayerController : MonoBehaviour {
             if(mInputEnabled != value) {
                 mInputEnabled = value;
 
-                mMoveCtrl.inputEnabled = mInputEnabled;
+                if(!mInputLocked)
+                    mMoveCtrl.inputEnabled = mInputEnabled;
 
                 //our own inputs
                 InputManager input = Main.instance != null ? Main.instance.input : null;
@@ -66,6 +68,22 @@ public class PlayerController : MonoBehaviour {
                 }
             }
         }
+    }
+
+    public bool inputLocked { 
+        get { return mInputLocked; } 
+        set {
+            if(mInputLocked != value) {
+                mInputLocked = value;
+
+                if(mInputLocked) {
+                    mMoveCtrl.inputEnabled = false;
+                }
+                else if(mInputEnabled) {
+                    mMoveCtrl.inputEnabled = true;
+                }
+            }
+        } 
     }
 
     void Awake() {
@@ -98,19 +116,21 @@ public class PlayerController : MonoBehaviour {
     #region input
 
     void OnInputAction(InputManager.Info dat) {
-        if(dat.state == InputManager.State.Pressed) {
-            //check if interactive
-            if(mReticleCurInteract == null) {
-                //determine what sort of equipment and fire that weapon
+        if(!mInputLocked) {
+            if(dat.state == InputManager.State.Pressed) {
+                //check if interactive
+                if(mReticleCurInteract == null) {
+                    //determine what sort of equipment and fire that weapon
+                }
             }
-        }
-        else if(dat.state == InputManager.State.Released) {
-            if(mReticleCurInteract != null) {
-                //
-                mReticleCurInteract.Act(gameObject);
-            }
-            else {
-                //release click based action?
+            else if(dat.state == InputManager.State.Released) {
+                if(mReticleCurInteract != null) {
+                    //
+                    mReticleCurInteract.Act(gameObject);
+                }
+                else {
+                    //release click based action?
+                }
             }
         }
     }
@@ -142,6 +162,7 @@ public class PlayerController : MonoBehaviour {
 
             case EntityState.Invalid:
                 inputEnabled = false;
+                inputLocked = false;
                 reticleActive = false;
                 break;
         }
