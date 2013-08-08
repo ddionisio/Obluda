@@ -21,14 +21,15 @@ public class Item {
     public string descKey; //key to localization
 
     public string iconRef; //ngui sprite ref
-    public string equipRef; //equipment reference from player
+    public string equipRef; //equipment reference from player (name of equip game object)
     public string spawnRef; //ref in world spawn for drops
 
     public int value;
     public int maxQuantity;
 
+    public int maxSpawnSave = 0; //max number of item spawn persistence across all scenes
+
     //flags
-    public bool important; //for pickups, save it in state, otherwise it is removed when exiting scene
 
     public static int numTypes { get { return System.Enum.GetValues(typeof(ItemType)).Length; } }
 

@@ -1,0 +1,14 @@
+[
+	{
+		"id":1,
+		"type":"Equip",
+		"nameKey":"shovel",
+		"descKey":"shovelDesc",
+		"iconRef":"iconShovel",
+		"equipRef":"shovel",
+		"spawnRef":"",
+		"value":1,
+		"maxQuantity":1,
+		"maxSpawnSave":0
+	}
+]

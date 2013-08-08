@@ -5,6 +5,8 @@ public struct InputAction {
     public const int LookX = 2;
     public const int LookY = 3;
     public const int Jump = 4;
-    public const int Action = 5;
-    public const int Menu = 6;
+    public const int ActionLeft = 5;
+    public const int ActionRight = 6;
+    public const int Interact = 7;
+    public const int Menu = 8;
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PlayerController : MonoBehaviour {
     public float interactDistance;
@@ -60,18 +61,22 @@ public class PlayerController : MonoBehaviour {
                 InputManager input = Main.instance != null ? Main.instance.input : null;
                 if(input != null) {
                     if(mInputEnabled) {
-                        input.AddButtonCall(0, InputAction.Action, OnInputAction);
+                        input.AddButtonCall(0, InputAction.Interact, OnInputInteract);
+                        input.AddButtonCall(0, InputAction.ActionLeft, OnInputActionLeft);
+                        input.AddButtonCall(0, InputAction.ActionRight, OnInputActionRight);
                     }
                     else {
-                        input.RemoveButtonCall(0, InputAction.Action, OnInputAction);
+                        input.RemoveButtonCall(0, InputAction.Interact, OnInputInteract);
+                        input.RemoveButtonCall(0, InputAction.ActionLeft, OnInputActionLeft);
+                        input.RemoveButtonCall(0, InputAction.ActionRight, OnInputActionRight);
                     }
                 }
             }
         }
     }
 
-    public bool inputLocked { 
-        get { return mInputLocked; } 
+    public bool inputLocked {
+        get { return mInputLocked; }
         set {
             if(mInputLocked != value) {
                 mInputLocked = value;
@@ -83,7 +88,7 @@ public class PlayerController : MonoBehaviour {
                     mMoveCtrl.inputEnabled = true;
                 }
             }
-        } 
+        }
     }
 
     void Awake() {
@@ -91,7 +96,7 @@ public class PlayerController : MonoBehaviour {
         mCursorAutoLock = GetComponent<CursorAutoLock>();
 
         //set input keys to these controllers
-        
+
         mMoveCtrl.moveInputX = InputAction.MoveX;
         mMoveCtrl.moveInputY = InputAction.MoveY;
         mMoveCtrl.lookInputX = InputAction.LookX;
@@ -115,24 +120,42 @@ public class PlayerController : MonoBehaviour {
 
     #region input
 
-    void OnInputAction(InputManager.Info dat) {
-        if(!mInputLocked) {
+    void OnInputInteract(InputManager.Info dat) {
+        //dont interact if there's an equip currently in action
+        if(!(mInputLocked || player.EquipHandsInProgress())) {
             if(dat.state == InputManager.State.Pressed) {
                 //check if interactive
-                if(mReticleCurInteract == null) {
-                    //determine what sort of equipment and fire that weapon
-                }
-            }
-            else if(dat.state == InputManager.State.Released) {
                 if(mReticleCurInteract != null) {
                     //
                     mReticleCurInteract.Act(gameObject);
                 }
-                else {
-                    //release click based action?
+            }
+        }
+    }
+
+    void EquipHandInput(Player.EquipHand hand, InputManager.Info dat) {
+        if(!mInputLocked && mReticleCurInteract == null) {
+            EquipBase equipDat = player.EquipHandGet(hand);
+
+            if(equipDat != null) {
+                if(dat.state == InputManager.State.Pressed) {
+                    if(!equipDat.ActionInProgress()) { //do action press only if not in progress
+                        equipDat.Action(player, InputManager.State.Pressed);
+                    }
+                }
+                else if(dat.state == InputManager.State.Released) {
+                    equipDat.Action(player, InputManager.State.Released);
                 }
             }
         }
+    }
+
+    void OnInputActionLeft(InputManager.Info dat) {
+        EquipHandInput(Player.EquipHand.Left, dat);
+    }
+
+    void OnInputActionRight(InputManager.Info dat) {
+        EquipHandInput(Player.EquipHand.Right, dat);
     }
 
     #endregion

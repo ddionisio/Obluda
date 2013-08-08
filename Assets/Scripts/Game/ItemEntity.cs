@@ -2,13 +2,24 @@
 using System.Collections;
 
 public class ItemEntity : EntityBase {
+    const string SerialItemKeyBase = "_sItmR";
+
     [SerializeField]
     int startItemId = -1;
+
+    [SerializeField]
+    bool removePersist = true; //if this is a scene item, persist after pickup?
 
     private int mItemId = -1;
     private Item mItemRef;
 
     public int itemId { get { return mItemId; } }
+
+    /// <summary>
+    /// NOTE: This is only used by ItemManager
+    /// </summary>
+    [System.NonSerialized]
+    public int _spawnId = 0;
 
     public Item itemRef {
         get { return mItemRef; }
@@ -20,8 +31,30 @@ public class ItemEntity : EntityBase {
         }
     }
 
+    public void Collect(PlayerController pc) {
+        if(mItemId == -1) {
+            Debug.LogError("Invalid item id, can't collect!");
+            return;
+        }
+
+        pc.player.inventory.Add(mItemId);
+        Release();
+    }
+
+    public override void Release() {
+        //if persistent, remove save reference and mark as 'removed'
+        if(serializer != null) {
+            serializer.SetValue("removed", 1, removePersist);
+        }
+        else {
+            //check if spawned via item manager from save, remove its reference
+            ItemManager.instance.RemoveItemSpawnSave(this);
+        }
+
+        base.Release();
+    }
+
     protected override void OnDespawned() {
-        //if persistent, remove save reference and mark as 'collected'
         if(mItemRef != null) {
             //reset stuff here
             mItemRef = null;
@@ -47,9 +80,6 @@ public class ItemEntity : EntityBase {
             if(mItemRef == null)
                 mItemRef = ItemManager.instance.GetItem(startItemId);
         }
-        else {
-            //determine if persistent, save reference
-        }
     }
 
     protected override void Awake() {
@@ -60,10 +90,17 @@ public class ItemEntity : EntityBase {
 
     // Use this for initialization
     protected override void Start() {
+        //check if this is marked as 'removed' from save reference
+        //this should only be for items placed in the editor, not from pool!
+        if(serializer != null) {
+            if(serializer.GetValue("removed", 0) != 0) {
+                DestroyImmediate(gameObject);
+                return;
+            }
+        }
+
         base.Start();
-
-        //check if this is marked as 'collected' from save reference
-
+                
         //initialize variables from other sources (for communicating with managers, etc.)
         if(startItemId != -1)
             itemRef = ItemManager.instance.GetItem(startItemId);
