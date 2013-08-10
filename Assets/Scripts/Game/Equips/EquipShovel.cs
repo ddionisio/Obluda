@@ -2,17 +2,26 @@
 using System.Collections;
 
 public class EquipShovel : EquipBase {
+
     public AnimatorData animator;
 
     public string takeIdle;
     public string takeSwing;
     public string takeDig;
 
+    private bool mIsHitting;
+
+    public void SetHitting(bool isHitting) {
+        mIsHitting = isHitting;
+    }
+        
     /// <summary>
     /// Set as equip, left=false -> right hand. Note: if left=false, then this gameobject's x-scale is set to -1
     /// </summary>
     public override void Equip(Player player, bool left) {
         animator.Play(takeIdle);
+
+        mIsHitting = false;
     }
 
     /// <summary>
@@ -21,7 +30,9 @@ public class EquipShovel : EquipBase {
     /// <returns>true if action has been performed. This will cancel out any other action and interact.</returns>
     public override bool Action(Player player, InputManager.State state) {
         if(state == InputManager.State.Pressed)
-            animator.Play(takeSwing);
+            animator.Play(takeSwing, true);
+        else
+            animator.currentPlayingTake.sequence.loops = animator.currentPlayingTake.sequence.completedLoops + 1;
 
         return true;
     }
@@ -46,5 +57,8 @@ public class EquipShovel : EquipBase {
     /// </summary>
     /// <param name="ctrl"></param>
     public override void ActionUpdate(Player player) {
+        if(mIsHitting) {
+            hit.Perform(player.controller.bodyPosition, player.controller.moveController.eye.forward, player.radius + hit.radius);
+        }
     }
 }

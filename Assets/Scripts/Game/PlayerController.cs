@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour {
 
     public Player player { get { return mPlayer; } }
     public FPController moveController { get { return mMoveCtrl; } }
+    public Vector3 bodyPosition { get { return mMoveCtrl.transform.position; } }
 
     public bool reticleActive {
         get { return mReticleActive; }
@@ -134,7 +135,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     void EquipHandInput(Player.EquipHand hand, InputManager.Info dat) {
-        if(!mInputLocked && mReticleCurInteract == null) {
+        if(!mInputLocked) {
             EquipBase equipDat = player.EquipHandGet(hand);
 
             if(equipDat != null) {

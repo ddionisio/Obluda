@@ -4,7 +4,10 @@ using System.Collections;
 public abstract class EquipBase : MonoBehaviour {
     private int mItemID = ItemManager.InvalidID;
 
+    private HitInfo mHit;
+
     public int itemID { get { return mItemID; } }
+    public HitInfo hit { get { return mHit; } }
 
     /// <summary>
     /// Only used by Player when this equipment becomes active
@@ -41,4 +44,8 @@ public abstract class EquipBase : MonoBehaviour {
     /// </summary>
     /// <param name="ctrl"></param>
     public abstract void ActionUpdate(Player player);
+
+    protected virtual void Awake() {
+        mHit = GetComponent<HitInfo>();
+    }
 }

@@ -48,7 +48,7 @@ public class ItemDrop : MonoBehaviour, IComparer<ItemDrop.Data> {
 
         //prep up randomization
 
-        mMaxRange = 0.0f;
+        mMaxRange = noneWeight;
 
         foreach(Data drop in drops) {
             mMaxRange += drop.weight;
@@ -60,8 +60,6 @@ public class ItemDrop : MonoBehaviour, IComparer<ItemDrop.Data> {
         mPicker.range = Random.value * mMaxRange;
 
         if(mPicker.range > noneWeight) {
-            mPicker.range -= noneWeight;
-
             mPickInd = System.Array.BinarySearch(drops, mPicker, this);
 
             if(mPickInd < 0) {

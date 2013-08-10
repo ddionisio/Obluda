@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class Player : EntityBase {
+public class Player : Character {
     public enum EquipHand {
         Left,
         Right,
@@ -19,6 +19,8 @@ public class Player : EntityBase {
     private Dictionary<string, EquipBase> mEquips = null;
 
     private EquipBase[] mEquipHands = new EquipBase[(int)EquipHand.NumHands];
+
+    public override float radius { get { return controller.moveController.radius; } }
 
     public PlayerController controller { get { return mController; } }
 
@@ -112,8 +114,23 @@ public class Player : EntityBase {
         mInventory.Save();
     }
 
-    protected override void StateChanged() {
+    protected override void OnHPChanged(Stat s, float delta) {
+        base.OnHPChanged(s, delta);
 
+        //HUD update
+    }
+
+    protected override void StateChanged() {
+        base.StateChanged();
+
+        switch((EntityState)state) {
+            case EntityState.Hit:
+                //invul for a bit
+                break;
+
+            case EntityState.Dead:
+                break;
+        }
     }
 
     void DeInit() {
@@ -141,9 +158,6 @@ public class Player : EntityBase {
     }
 
     public override void SpawnFinish() {
-        //start ai, player control, etc
-        state = (int)EntityState.Normal;
-
         //initialize current equips
         for(int i = 0; i < mEquipHands.Length; i++) {
             DoEquip(i);
@@ -151,9 +165,13 @@ public class Player : EntityBase {
 
         //TEST
         EquipHandSet(EquipHand.Left, 1);
+
+        base.SpawnFinish();
     }
 
     protected override void SpawnStart() {
+        base.SpawnStart();
+
         //initialize some things
     }
 
@@ -163,7 +181,7 @@ public class Player : EntityBase {
         //initialize variables
         autoSpawnFinish = true;
 
-        mController = GetComponentInChildren<PlayerController>();
+        mController = GetComponent<PlayerController>();
 
         mEquips = new Dictionary<string, EquipBase>(equipHolder.childCount);
 
@@ -184,6 +202,14 @@ public class Player : EntityBase {
         InputManager input = Main.instance.input;
 
         input.AddButtonCall(0, InputAction.Menu, OnInputMenu);
+    }
+
+    void Update() {
+        for(int i = 0, max = mEquipHands.Length; i < max; i++) {
+            EquipBase equip = mEquipHands[i];
+            if(equip != null)
+                equip.ActionUpdate(this);
+        }
     }
 
     void OnInputMenu(InputManager.Info dat) {
