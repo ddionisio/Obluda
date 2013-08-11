@@ -20,6 +20,7 @@ public class Player : Character {
 
     private EquipBase[] mEquipHands = new EquipBase[(int)EquipHand.NumHands];
 
+    public override Vector3 position { get { return controller.moveController.transform.position; } }
     public override float radius { get { return controller.moveController.radius; } }
 
     public PlayerController controller { get { return mController; } }
@@ -42,7 +43,7 @@ public class Player : Character {
         if(itm != null && mEquips.TryGetValue(itm.equipRef, out equipDat)) {
             if(mEquipHands[ind] != equipDat) {
                 if(mEquipHands[ind] != null) {
-                    mEquipHands[ind].ActionCancel(this);
+                    mEquipHands[ind].ActionCancel();
                     mEquipHands[ind].gameObject.SetActive(false); //TODO: wait for action to cancel?
                 }
 
@@ -53,7 +54,7 @@ public class Player : Character {
             }
         }
         else if(mEquipHands[ind] != null) {
-            mEquipHands[ind].ActionCancel(this);
+            mEquipHands[ind].ActionCancel();
             mEquipHands[ind].gameObject.SetActive(false); //TODO: wait for action to cancel?
             mEquipHands[ind] = null;
         }
@@ -114,6 +115,14 @@ public class Player : Character {
         mInventory.Save();
     }
 
+    public void EquipCancelActions() {
+        for(int i = 0, max = mEquipHands.Length; i < max; i++) {
+            EquipBase equip = mEquipHands[i];
+            if(equip != null)
+                equip.ActionCancel();
+        }
+    }
+
     protected override void OnHPChanged(Stat s, float delta) {
         base.OnHPChanged(s, delta);
 
@@ -125,10 +134,11 @@ public class Player : Character {
 
         switch((EntityState)state) {
             case EntityState.Hit:
-                //invul for a bit
+                EquipCancelActions();
                 break;
 
             case EntityState.Dead:
+                EquipCancelActions();
                 break;
         }
     }
@@ -189,6 +199,7 @@ public class Player : Character {
             EquipBase equipDat = equip.GetComponent<EquipBase>();
             if(equipDat != null) {
                 equipDat.gameObject.SetActive(false);
+                equipDat.source = this;
                 mEquips.Add(equip.name, equipDat);
             }
         }
@@ -208,7 +219,7 @@ public class Player : Character {
         for(int i = 0, max = mEquipHands.Length; i < max; i++) {
             EquipBase equip = mEquipHands[i];
             if(equip != null)
-                equip.ActionUpdate(this);
+                equip.ActionUpdate();
         }
     }
 
@@ -246,7 +257,7 @@ public class Player : Character {
             s.x = isLeft ? Mathf.Abs(s.x) : -Mathf.Abs(s.x);
             equipDat.transform.localScale = s;
 
-            equipDat.Equip(this, isLeft);
+            equipDat.Equip(isLeft);
         }
     }
 }

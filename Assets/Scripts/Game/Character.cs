@@ -13,6 +13,8 @@ public class Character : EntityBase {
     private float mRadius;
 
     public Stat stats { get { return mStats; } }
+
+    public virtual Vector3 position { get { return transform.position; } }
     public virtual float radius { get { return mRadius; } }
 
     protected virtual void OnHPChanged(Stat s, float delta) {

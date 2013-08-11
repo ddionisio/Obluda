@@ -6,8 +6,11 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 
-//put this under levelCore object
+/// <summary>
+/// Put this as child in core object
+/// </summary>
 public class ItemManager : MonoBehaviour {
+    public const string spawnHolderTag = "ItemSpawnHolder";
     public const int InvalidID = 0;
     public TextAsset config;
 
@@ -15,14 +18,19 @@ public class ItemManager : MonoBehaviour {
 
     [System.Serializable]
     private struct SpawnSave {
-        public string scene;
-        public int id;
+        public int itmID;
+        public int spwnID;
         public Vector3 pos;
         public Quaternion rot;
     }
 
+    private bool mStarted = false;
+
     private Dictionary<int, Item> mItems;
     private PoolController mPool;
+
+    private Transform mSpawnHolder;
+    private Dictionary<int, ItemEntity> mSpawnedItemSaves = new Dictionary<int,ItemEntity>(); //[spawn id, item entity]
 
     public static ItemManager instance { get { return mInstance; } }
 
@@ -37,7 +45,7 @@ public class ItemManager : MonoBehaviour {
     ItemEntity _SpawnItem(int id, Vector3 pos, Quaternion rot, bool spawnSave) {
         Item itm = GetItem(id);
         if(itm != null) {
-            Transform t = mPool.Spawn(itm.spawnRef, itm.nameKey, null, pos);
+            Transform t = mPool.Spawn(itm.spawnRef, itm.nameKey, mSpawnHolder, pos);
             if(t != null) {
                 t.rotation = rot;
 
@@ -45,8 +53,15 @@ public class ItemManager : MonoBehaviour {
                 itmEnt.itemRef = itm;
 
                 //save spawn, only if maxSpawnSave > 0
-                if(spawnSave)
-                    SpawnSaveAdd(itmEnt);
+                if(spawnSave && itm.maxSpawnSave > 0) {
+                    SceneSerializer ss = itmEnt.GetComponent<SceneSerializer>();
+                    if(ss == null)
+                        ss = itmEnt.gameObject.AddComponent<SceneSerializer>();
+
+                    ss.__GenNewID();
+
+                    mSpawnedItemSaves.Add(ss.id, itmEnt);
+                }
 
                 return itmEnt;
             }
@@ -107,14 +122,42 @@ public class ItemManager : MonoBehaviour {
         ud.SetInt(header, items.Count);
     }
 
-    public bool RemoveItemSpawnSave(ItemEntity itmEnt) {
-        if(itmEnt._spawnId != 0) {
-            SpawnSaveRemove(itmEnt.itemId, itmEnt._spawnId);
-            itmEnt._spawnId = 0;
-            return true;
+    /// <summary>
+    /// Call this during ItemEntity Release when we want to explicitly say that item will no longer be spawned when the scene is reloaded.
+    /// Returns true if item spawn has been deleted.
+    /// This will remove all persistent data for the item.
+    /// </summary>
+    public bool RemoveItemSpawnData(ItemEntity itmEnt) {
+        SceneSerializer ss = itmEnt.GetComponent<SceneSerializer>();
+        if(ss != null) {
+            if(mSpawnedItemSaves.ContainsKey(ss.id)) {
+                mSpawnedItemSaves.Remove(ss.id);
+                ss.DeleteAllValues();
+
+                return true;
+            }
         }
 
         return false;
+    }
+
+    ////RootBroadcastMessage("SceneChange", mSceneToLoad, SendMessageOptions.DontRequireReceiver);
+
+    void OnDisable() {
+        //level unload, save spawns
+        if(mStarted) {
+            SpawnSaveCurrentScene();
+
+            mSpawnedItemSaves.Clear();
+        }
+    }
+
+    void OnEnable() {
+        //new level loaded
+        if(mStarted) {
+            SetSpawnHolder();
+            SpawnPopulateCurrentScene();
+        }
     }
 
     void OnDestroy() {
@@ -142,16 +185,27 @@ public class ItemManager : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
-        SpawnSavePopulateCurrentScene();
+        mStarted = true;
+        SetSpawnHolder();
+        SpawnPopulateCurrentScene();
     }
 
+    void SetSpawnHolder() {
+        GameObject spawnHolderGO = GameObject.FindGameObjectWithTag(spawnHolderTag);
+        if(spawnHolderGO == null) {
+            spawnHolderGO = new GameObject("itemSpawns");
+            spawnHolderGO.tag = spawnHolderTag;
+        }
 
+        mSpawnHolder = spawnHolderGO.transform;
+    }
+        
     #region spawn save
 
-    List<SpawnSave> SpawnSaveGet(int itmID) {
+    List<SpawnSave> SpawnSaveGet() {
         List<SpawnSave> ret = null;
 
-        string dat = UserData.instance.GetString("_itm_" + itmID);
+        string dat = UserData.instance.GetString("il_" + Application.loadedLevelName);
 
         if(!string.IsNullOrEmpty(dat)) {
             BinaryFormatter bf = new BinaryFormatter();
@@ -162,67 +216,47 @@ public class ItemManager : MonoBehaviour {
         return ret;
     }
 
-    void SpawnSaveSet(int itmID, List<SpawnSave> dat) {
+    void SpawnSaveSet(List<SpawnSave> dat) {
         if(dat != null && dat.Count > 0) {
             BinaryFormatter bf = new BinaryFormatter();
             MemoryStream ms = new MemoryStream();
             bf.Serialize(ms, dat);
-            UserData.instance.SetString("_itm_" + itmID, System.Convert.ToBase64String(ms.GetBuffer()));
+            UserData.instance.SetString("il_" + Application.loadedLevelName, System.Convert.ToBase64String(ms.GetBuffer()));
         }
         else {
-            UserData.instance.Delete("_itm_" + itmID);
+            UserData.instance.Delete("il_" + Application.loadedLevelName);
         }
     }
 
-    void SpawnSaveRemove(int itmID, int spawnID) {
-        List<SpawnSave> dat = SpawnSaveGet(itmID);
-        if(dat != null && dat.Count > 0) {
-            for(int i = 0; i < dat.Count; i++) {
-                if(dat[i].id == spawnID) {
-                    dat.RemoveAt(i);
-                    break;
-                }
-            }
+    void SpawnPopulateCurrentScene() {
+        mSpawnedItemSaves.Clear();
 
-            SpawnSaveSet(itmID, dat);
-        }
-    }
-
-    void SpawnSaveAdd(ItemEntity itmEnt) {
-        Item itm = itmEnt.itemRef;
-
-        if(itm.maxSpawnSave > 0) {
-            List<SpawnSave> dat = SpawnSaveGet(itm.id);
-
-            if(dat == null)
-                dat = new List<SpawnSave>();
-            else if(dat.Count == itm.maxSpawnSave) {
-                //remove oldest
-                dat.RemoveAt(0);
-            }
-
-            itmEnt._spawnId = itmEnt.GetInstanceID();
-
-            dat.Add(new SpawnSave() { scene = Application.loadedLevelName, id = itmEnt._spawnId, pos = itmEnt.transform.position, rot = itmEnt.transform.rotation });
-
-            SpawnSaveSet(itm.id, dat);
-        }
-    }
-
-    void SpawnSavePopulateCurrentScene() {
         //go through item ids and load items if they match the scene
-        foreach(KeyValuePair<int, Item> pair in mItems) {
-            List<SpawnSave> dat = SpawnSaveGet(pair.Key);
-            if(dat != null) {
-                foreach(SpawnSave spawnDat in dat) {
-                    if(spawnDat.scene == Application.loadedLevelName) {
-                        ItemEntity itmSpawned = _SpawnItem(pair.Key, spawnDat.pos, spawnDat.rot, false);
-                        if(itmSpawned != null)
-                            itmSpawned._spawnId = spawnDat.id;
-                    }
+        List<SpawnSave> dats = SpawnSaveGet();
+        if(dats != null) {
+            foreach(SpawnSave dat in dats) {
+                ItemEntity itmSpawned = _SpawnItem(dat.itmID, dat.pos, dat.rot, false);
+                if(itmSpawned != null) {
+                    SceneSerializer ss = itmSpawned.GetComponent<SceneSerializer>();
+                    if(ss == null)
+                        ss = itmSpawned.gameObject.AddComponent<SceneSerializer>();
+
+                    ss.__EditorSetID(dat.spwnID);
+
+                    mSpawnedItemSaves.Add(ss.id, itmSpawned);
                 }
             }
         }
+    }
+
+    void SpawnSaveCurrentScene() {
+        List<SpawnSave> dats = new List<SpawnSave>();
+
+        foreach(KeyValuePair<int, ItemEntity> pair in mSpawnedItemSaves) {
+            dats.Add(new SpawnSave() { spwnID = pair.Key, itmID = pair.Value.itemId, pos = pair.Value.transform.position, rot = pair.Value.transform.rotation });
+        }
+
+        SpawnSaveSet(dats);
     }
 
     #endregion

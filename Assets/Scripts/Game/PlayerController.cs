@@ -22,7 +22,6 @@ public class PlayerController : MonoBehaviour {
 
     public Player player { get { return mPlayer; } }
     public FPController moveController { get { return mMoveCtrl; } }
-    public Vector3 bodyPosition { get { return mMoveCtrl.transform.position; } }
 
     public bool reticleActive {
         get { return mReticleActive; }
@@ -141,11 +140,11 @@ public class PlayerController : MonoBehaviour {
             if(equipDat != null) {
                 if(dat.state == InputManager.State.Pressed) {
                     if(!equipDat.ActionInProgress()) { //do action press only if not in progress
-                        equipDat.Action(player, InputManager.State.Pressed);
+                        equipDat.Action(InputManager.State.Pressed);
                     }
                 }
                 else if(dat.state == InputManager.State.Released) {
-                    equipDat.Action(player, InputManager.State.Released);
+                    equipDat.Action(InputManager.State.Released);
                 }
             }
         }

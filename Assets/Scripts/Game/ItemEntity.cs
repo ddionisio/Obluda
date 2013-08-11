@@ -43,12 +43,10 @@ public class ItemEntity : EntityBase {
 
     public override void Release() {
         //if persistent, remove save reference and mark as 'removed'
-        if(serializer != null) {
-            serializer.SetValue("removed", 1, removePersist);
-        }
-        else {
-            //check if spawned via item manager from save, remove its reference
-            ItemManager.instance.RemoveItemSpawnSave(this);
+        if(!ItemManager.instance.RemoveItemSpawnData(this)) {
+            if(serializer != null) {
+                serializer.SetValue("removed", 1, removePersist);
+            }
         }
 
         base.Release();
@@ -85,11 +83,6 @@ public class ItemEntity : EntityBase {
     protected override void Awake() {
         base.Awake();
 
-        //initialize variables
-    }
-
-    // Use this for initialization
-    protected override void Start() {
         //check if this is marked as 'removed' from save reference
         //this should only be for items placed in the editor, not from pool!
         if(serializer != null) {
@@ -99,6 +92,11 @@ public class ItemEntity : EntityBase {
             }
         }
 
+        //initialize variables
+    }
+
+    // Use this for initialization
+    protected override void Start() {
         base.Start();
                 
         //initialize variables from other sources (for communicating with managers, etc.)
