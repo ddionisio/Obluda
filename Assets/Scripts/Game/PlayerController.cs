@@ -8,6 +8,8 @@ public class PlayerController : MonoBehaviour {
     public LayerMask interactLayer; //layers of objects that are interactive (this should be a mask within interactLayerCast)
     public float interactCheckDelay = 0.15f;
 
+    public Transform attach; //for hookshot, etc.
+
     private Player mPlayer;
     private FPController mMoveCtrl;
     private CursorAutoLock mCursorAutoLock;
@@ -16,7 +18,7 @@ public class PlayerController : MonoBehaviour {
     private bool mReticleIsRunning = false;
     private WaitForSeconds mReticleWaitDelay;
     private Interactor mReticleCurInteract = null;
-
+    
     private bool mInputEnabled = false;
     private bool mInputLocked = false;
 

@@ -3,16 +3,21 @@ using System.Collections;
 using HutongGames.PlayMaker;
 
 public class Interactor : MonoBehaviour {
+    public delegate void OnAction(Interactor interact, GameObject source);
+
     public enum State {
         None,
         Invalid,
         Dialog,
         Act,
+        Seed,
     }
 
     public PlayMakerFSM targetFSM; //if null, use the fsm of this object
-        
+
     public GameObject onPointGO; //set to active if we are pointed at
+
+    public event OnAction actionCallback;
 
     [SerializeField]
     bool _defaultLocked = false;
@@ -33,7 +38,7 @@ public class Interactor : MonoBehaviour {
         set {
             if(mStateOnPoint != value) {
                 mStateOnPoint = value;
-                                
+
                 if(mIsPointedAt)
                     Reticle.instance.state = (int)mStateOnPoint;
             }
@@ -57,9 +62,19 @@ public class Interactor : MonoBehaviour {
 
     public void Act(GameObject source) {
         if(!mLocked) {
-            Fsm.EventData.GameObjectData = source;
-            targetFSM.SendEvent(EntityEvent.Interact);
+            if(actionCallback != null)
+                actionCallback(this, source);
+
+            if(targetFSM != null) {
+                Fsm.EventData.GameObjectData = source;
+
+                targetFSM.SendEvent(EntityEvent.Interact);
+            }
         }
+    }
+
+    void OnDestroy() {
+        actionCallback = null;
     }
 
     void OnEnable() {

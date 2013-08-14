@@ -99,6 +99,14 @@ public class EquipShovel : EquipBase {
         }
         else if(mDigging) {
             //spawn dig spot
+            DigInteract digInteract = mDigHit.collider.GetComponent<DigInteract>();
+            if(digInteract != null)
+                digInteract.Action(mDigHit.point, mDigHit.normal);
+            else {
+                //spawn a default dig hole
+                DigHoleManager.instance.SpawnDefaultDig(null, mDigHit.point, mDigHit.normal);
+            }
+
             DeinitDig();
         }
         else {

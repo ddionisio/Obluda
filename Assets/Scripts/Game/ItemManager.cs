@@ -45,10 +45,8 @@ public class ItemManager : MonoBehaviour {
     ItemEntity _SpawnItem(int id, Vector3 pos, Quaternion rot, bool spawnSave) {
         Item itm = GetItem(id);
         if(itm != null) {
-            Transform t = mPool.Spawn(itm.spawnRef, itm.nameKey, mSpawnHolder, pos);
+            Transform t = mPool.Spawn(itm.spawnRef, itm.nameKey, mSpawnHolder, pos, rot);
             if(t != null) {
-                t.rotation = rot;
-
                 ItemEntity itmEnt = t.GetComponent<ItemEntity>();
                 itmEnt.itemRef = itm;
 
@@ -143,31 +141,37 @@ public class ItemManager : MonoBehaviour {
 
     ////RootBroadcastMessage("SceneChange", mSceneToLoad, SendMessageOptions.DontRequireReceiver);
 
-    void OnDisable() {
-        //level unload, save spawns
-        if(mStarted) {
-            SpawnSaveCurrentScene();
-
-            mSpawnedItemSaves.Clear();
-        }
-    }
-
-    void OnEnable() {
-        //new level loaded
-        if(mStarted) {
-            SetSpawnHolder();
-            SpawnPopulateCurrentScene();
-        }
-    }
-
     void OnDestroy() {
         if(mInstance == this)
             mInstance = null;
     }
 
+    void OnUserDataAction(UserData ud, UserData.Action act) {
+        switch(act) {
+            case UserData.Action.Enable:
+                //new level loaded
+                if(mStarted) {
+                    SetSpawnHolder();
+                    SpawnPopulateCurrentScene();
+                }
+                break;
+
+            case UserData.Action.Disable:
+                //level unload, save spawns
+                if(mStarted) {
+                    SpawnSaveCurrentScene();
+
+                    mSpawnedItemSaves.Clear();
+                }
+                break;
+        }
+    }
+
     void Awake() {
         if(mInstance == null) {
             mInstance = this;
+
+            UserData.instance.actCallback += OnUserDataAction;
 
             //get item data
             fastJSON.JSON.Instance.Parameters.UseExtensions = true;

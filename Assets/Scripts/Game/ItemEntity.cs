@@ -43,9 +43,10 @@ public class ItemEntity : EntityBase {
 
     public override void Release() {
         //if persistent, remove save reference and mark as 'removed'
+        //first check if this is spawned, then just remove that reference.
         if(!ItemManager.instance.RemoveItemSpawnData(this)) {
-            if(serializer != null) {
-                serializer.SetValue("removed", 1, removePersist);
+            if(removePersist && serializer != null) {
+                serializer.MarkRemove();
             }
         }
 
@@ -74,23 +75,11 @@ public class ItemEntity : EntityBase {
 
     protected override void SpawnStart() {
         //initialize some things
-        if(startItemId != -1) { //this means it is placed on the scene
-            if(mItemRef == null)
-                mItemRef = ItemManager.instance.GetItem(startItemId);
-        }
+        InitStartItemRef();
     }
 
     protected override void Awake() {
         base.Awake();
-
-        //check if this is marked as 'removed' from save reference
-        //this should only be for items placed in the editor, not from pool!
-        if(serializer != null) {
-            if(serializer.GetValue("removed", 0) != 0) {
-                DestroyImmediate(gameObject);
-                return;
-            }
-        }
 
         //initialize variables
     }
@@ -100,7 +89,14 @@ public class ItemEntity : EntityBase {
         base.Start();
                 
         //initialize variables from other sources (for communicating with managers, etc.)
-        if(startItemId != -1)
+        InitStartItemRef();
+    }
+
+    void InitStartItemRef() {
+        if(startItemId != -1) {
             itemRef = ItemManager.instance.GetItem(startItemId);
+            if(mItemRef != itemRef)
+                mItemRef = itemRef;
+        }
     }
 }
