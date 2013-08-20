@@ -10,3 +10,6 @@
 [submodule "Assets/M8AnimatorPlayMaker"]
 	path = Assets/M8AnimatorPlayMaker
 	url = https://github.com/ddionisio/MateAnimatorPlayMaker.git
+[submodule "Assets/M8ImageEffects"]
+	path = Assets/M8ImageEffects
+	url = https://github.com/ddionisio/MateImageEffects.git

@@ -7,9 +7,6 @@ public class ItemEntity : EntityBase {
     [SerializeField]
     int startItemId = -1;
 
-    [SerializeField]
-    bool removePersist = true; //if this is a scene item, persist after pickup?
-
     private int mItemId = -1;
     private Item mItemRef;
 
@@ -42,12 +39,8 @@ public class ItemEntity : EntityBase {
     }
 
     public override void Release() {
-        //if persistent, remove save reference and mark as 'removed'
-        //first check if this is spawned, then just remove that reference.
-        if(!ItemManager.instance.RemoveItemSpawnData(this)) {
-            if(removePersist && serializer != null) {
-                serializer.MarkRemove();
-            }
+        if(serializer != null) {
+            serializer.MarkRemove();
         }
 
         base.Release();
@@ -75,6 +68,9 @@ public class ItemEntity : EntityBase {
 
     protected override void SpawnStart() {
         //initialize some things
+        if(transform.parent != ItemManager.instance.spawnHolder)
+            transform.parent = ItemManager.instance.spawnHolder;
+
         InitStartItemRef();
     }
 

@@ -27,8 +27,6 @@ public class Item {
     public int value;
     public int maxQuantity;
 
-    public int maxSpawnSave = 0; //max number of item spawn persistence across all scenes
-
     //flags
 
     public static int numTypes { get { return System.Enum.GetValues(typeof(ItemType)).Length; } }
